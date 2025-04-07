@@ -11,7 +11,7 @@ le_industry = pickle.load(open('industry_encoder.pkl', 'rb'))
 # Load Dataset (only to extract unique city & industry for dropdown)
 data = pd.read_excel('startup_funding.xlsx')
 
-unique_cities = sorted(data['City Location'].dropna().unique())
+unique_cities = sorted(data['City  Location'].dropna().unique())
 unique_industries = sorted(data['Industry Vertical'].dropna().unique())
 
 # Streamlit App UI
