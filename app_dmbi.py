@@ -1,45 +1,43 @@
 import streamlit as st
 import pickle
 import numpy as np
-import os
 
-st.set_page_config(page_title="Startup Funding Prediction", page_icon="🚀", layout="centered")
+# Load Model
+model = pickle.load(open('model.pkl', 'rb'))
 
-st.title("🚀 Startup Funding Prediction App")
+# Load LabelEncoders
+le_city = pickle.load(open('le_city.pkl', 'rb'))
+le_industry = pickle.load(open('le_industry.pkl', 'rb'))
+le_subvertical = pickle.load(open('le_subvertical.pkl', 'rb'))
+le_investors = pickle.load(open('le_investors.pkl', 'rb'))
+le_funding = pickle.load(open('le_funding.pkl', 'rb'))
 
-# Load Pickle Files
-def load_pickle(file_name):
-    return pickle.load(open(os.path.join(os.path.dirname(__file__), file_name), 'rb'))
+st.title("Startup Funding Prediction App")
 
-model = load_pickle('funding_model.pkl')
-le_city = load_pickle('le_city.pkl')
-le_industry = load_pickle('le_industry.pkl')
-le_subvertical = load_pickle('le_subvertical.pkl')
-le_investors = load_pickle('le_investors.pkl')
-le_funding = load_pickle('le_funding.pkl')
+st.markdown("### Enter Startup Details")
 
-st.markdown("## Enter Startup Details")
-
+# Dropdowns for categorical features
 city = st.selectbox("City Location", le_city.classes_)
 industry = st.selectbox("Industry Vertical", le_industry.classes_)
 subvertical = st.selectbox("Sub Vertical", le_subvertical.classes_)
-investors = st.selectbox("Investors", le_investors.classes_)
-funding_type = st.selectbox("Funding Type", le_funding.classes_)
-num_investors = st.slider("Number of Investors", 1, 3, 1)
+investors = st.selectbox("Investors Name", le_investors.classes_)
+funding = st.selectbox("Funding Type", le_funding.classes_)
+
+# Slider for Number of Investors
+num_investors = st.slider("Number of Investors", 1, 3, step=1)
 
 if st.button("Predict Funding Amount"):
-    input_data = np.array([
-        le_city.transform([city])[0],
-        le_industry.transform([industry])[0],
-        le_subvertical.transform([subvertical])[0],
-        le_investors.transform([investors])[0],
-        le_funding.transform([funding_type])[0],
-        num_investors
-    ]).reshape(1, -1)
+    # Encoding categorical values
+    city_encoded = le_city.transform([city])[0]
+    industry_encoded = le_industry.transform([industry])[0]
+    subvertical_encoded = le_subvertical.transform([subvertical])[0]
+    investors_encoded = le_investors.transform([investors])[0]
+    funding_encoded = le_funding.transform([funding])[0]
 
-    prediction = model.predict(input_data)[0]
+    features = np.array([[city_encoded, industry_encoded, subvertical_encoded,
+                          investors_encoded, funding_encoded, num_investors]])
 
-    st.success(f"💰 Predicted Funding Amount: ₹ {np.round(prediction, 2)}")
+    prediction = model.predict(features)
 
-st.markdown("---")
-st.markdown("Developed with ❤️ by *Your Name*")
+    st.success(f"Predicted Funding Amount: ₹ {prediction[0]:,.2f}")
+
