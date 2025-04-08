@@ -3,7 +3,7 @@ import pickle
 import numpy as np
 
 # Load Model
-model = pickle.load(open('model.pkl', 'rb'))
+model = pickle.load(open('funding_model.pkl', 'rb'))
 
 # Load LabelEncoders
 le_city = pickle.load(open('le_city.pkl', 'rb'))
