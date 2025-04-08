@@ -1,42 +1,47 @@
 import streamlit as st
-import pickle
-import numpy as np
 import pandas as pd
+import numpy as np
+import pickle
 
 # Load Model
 model = pickle.load(open('funding_model.pkl', 'rb'))
 
-# Load Encoders
-le_city = pickle.load(open('le_city.pkl', 'rb'))
-le_industry = pickle.load(open('le_industry.pkl', 'rb'))
-le_subvertical = pickle.load(open('le_subvertical.pkl', 'rb'))
-le_investors = pickle.load(open('le_investors.pkl', 'rb'))
-le_funding = pickle.load(open('le_funding.pkl', 'rb'))
+# Load Encoders with Mapping
+encoders = {}
+for col in ['City  Location', 'Industry Vertical', 'SubVertical', 'Investors Name', 'InvestmentnType']:
+    le = pickle.load(open(f'le_{col.replace(" ", "_")}.pkl', 'rb'))
+    encoders[col] = {
+        'encoder': le,
+        'mapping': dict(zip(le.classes_, le.transform(le.classes_)))
+    }
 
-st.title("Startup Funding Prediction App")
+st.title("Startup Funding Amount Prediction")
 
-st.markdown("### Enter Startup Details")
+st.subheader("Enter Startup Details")
 
-# Create Dropdowns with Labels
-city = st.selectbox("City Location", list(le_city.classes_))
-industry = st.selectbox("Industry Vertical", list(le_industry.classes_))
-subvertical = st.selectbox("Sub Vertical", list(le_subvertical.classes_))
-investors = st.selectbox("Investors Name", list(le_investors.classes_))
-funding = st.selectbox("Funding Type", list(le_funding.classes_))
+# User Inputs (Show Labels)
+city = st.selectbox("City Location", encoders['City  Location']['mapping'].keys())
+industry = st.selectbox("Industry Vertical", encoders['Industry Vertical']['mapping'].keys())
+subvertical = st.selectbox("Sub Vertical", encoders['SubVertical']['mapping'].keys())
+investors = st.selectbox("Investors Name", encoders['Investors Name']['mapping'].keys())
+funding = st.selectbox("Investment Type", encoders['InvestmentnType']['mapping'].keys())
+year = st.number_input("Year", min_value=2000, max_value=2025, value=2023)
+month = st.number_input("Month", min_value=1, max_value=12, value=1)
+num_investors = st.slider("Number of Investors", 1, 3, 1)
 
-num_investors = st.slider("Number of Investors", 1, 3)
+# Map Labels to Encoded values
+input_data = pd.DataFrame({
+    'City  Location': [encoders['City  Location']['mapping'][city]],
+    'Industry Vertical': [encoders['Industry Vertical']['mapping'][industry]],
+    'SubVertical': [encoders['SubVertical']['mapping'][subvertical]],
+    'Investors Name': [encoders['Investors Name']['mapping'][investors]],
+    'InvestmentnType': [encoders['InvestmentnType']['mapping'][funding]],
+    'Year': [year],
+    'Month': [month],
+    'Number of Investors': [num_investors]
+})
 
-# Prediction
-if st.button("Predict Funding Amount"):
-    city_enc = le_city.transform([city])[0]
-    industry_enc = le_industry.transform([industry])[0]
-    subvertical_enc = le_subvertical.transform([subvertical])[0]
-    investors_enc = le_investors.transform([investors])[0]
-    funding_enc = le_funding.transform([funding])[0]
-
-    features = np.array([[city_enc, industry_enc, subvertical_enc, investors_enc, funding_enc, num_investors]])
-
-    prediction = model.predict(features)
-
-    st.success(f"Predicted Funding Amount: ₹ {prediction[0]:,.2f}")
-
+if st.button('Predict Funding Amount'):
+    log_pred = model.predict(input_data)
+    prediction = np.expm1(log_pred[0])
+    st.success(f"Predicted Funding Amount (USD): {prediction:,.2f}")
