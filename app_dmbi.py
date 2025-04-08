@@ -1,48 +1,63 @@
 import streamlit as st
-import pandas as pd
-import numpy as np
 import pickle
+import numpy as np
+import os
 
-# Load model & encoders
-model = pickle.load(open('funding_model.pkl', 'rb'))
-le_city = pickle.load(open('le_city.pkl', 'rb'))
-le_industry = pickle.load(open('le_industry.pkl', 'rb'))
-le_subvertical = pickle.load(open('le_subvertical.pkl', 'rb'))
-le_investors = pickle.load(open('le_investors.pkl', 'rb'))
-le_funding = pickle.load(open('le_funding.pkl', 'rb'))
+# Page config
+st.set_page_config(page_title="Startup Funding Prediction", page_icon="🚀", layout="centered")
 
-st.title("Startup Funding Prediction App")
+st.title("🚀 Startup Funding Prediction App")
 
-# Dropdown options (based on original data used for encoding)
-city_options = le_city.classes_
-industry_options = le_industry.classes_
-subvertical_options = le_subvertical.classes_
-investor_options = le_investors.classes_
-funding_options = le_funding.classes_
+# Load Model & Encoders
+def load_pickle(file_name):
+    return pickle.load(open(os.path.join(os.path.dirname(__file__), file_name), 'rb'))
 
-# User Inputs
-city = st.selectbox("City Location", city_options)
-industry = st.selectbox("Industry Vertical", industry_options)
-subvertical = st.selectbox("SubVertical", subvertical_options)
-investors = st.selectbox("Investors Name", investor_options)
-funding_type = st.selectbox("Funding Type", funding_options)
-year = st.number_input("Year", min_value=2000, max_value=2025, step=1)
-month = st.selectbox("Month", list(range(1, 13)))
-num_investors = len(investors.split(','))
+model = load_pickle('funding_model.pkl')
+le_city = load_pickle('le_city.pkl')
+le_industry = load_pickle('le_industry.pkl')
+le_subvertical = load_pickle('le_subvertical.pkl')
+le_investors = load_pickle('le_investors.pkl')
+le_funding = load_pickle('le_funding.pkl')
 
-# Prepare Input Data
-input_data = pd.DataFrame({
-    'City  Location': [le_city.transform([city])[0]],
-    'Industry Vertical': [le_industry.transform([industry])[0]],
-    'SubVertical': [le_subvertical.transform([subvertical])[0]],
-    'Investors Name': [le_investors.transform([investors])[0]],
-    'InvestmentnType': [le_funding.transform([funding_type])[0]],
-    'Year': [year],
-    'Month': [month],
-    'Number of Investors': [num_investors]
-})
+# Sidebar
+st.sidebar.header("About App")
+st.sidebar.markdown("""
+This app predicts the **Startup Funding Amount** based on:
+- City Location
+- Industry Vertical
+- Sub Vertical
+- Investors
+- Funding Type
+- Number of Investors
+""")
 
+st.sidebar.info("Built with ❤️ using Streamlit")
+
+# Input Fields
+st.markdown("## Enter Startup Details")
+
+city = st.selectbox("City Location", le_city.classes_)
+industry = st.selectbox("Industry Vertical", le_industry.classes_)
+subvertical = st.selectbox("Sub Vertical", le_subvertical.classes_)
+investors = st.selectbox("Investors", le_investors.classes_)
+funding_type = st.selectbox("Funding Type", le_funding.classes_)
+num_investors = st.slider("Number of Investors", 1, 20, 1)
+
+# Predict Button
 if st.button("Predict Funding Amount"):
-    log_prediction = model.predict(input_data)
-    prediction = np.expm1(log_prediction[0])
-    st.success(f"Predicted Funding Amount: ${prediction:,.2f}")
+    input_data = np.array([
+        le_city.transform([city])[0],
+        le_industry.transform([industry])[0],
+        le_subvertical.transform([subvertical])[0],
+        le_investors.transform([investors])[0],
+        le_funding.transform([funding_type])[0],
+        num_investors
+    ]).reshape(1, -1)
+
+    prediction = model.predict(input_data)[0]
+
+    st.success(f"💰 Predicted Funding Amount: ₹ {np.round(prediction, 2)}")
+
+st.markdown("---")
+st.markdown("Developed by *Your Name* | Powered by Streamlit")
+
