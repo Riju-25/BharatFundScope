@@ -4,7 +4,7 @@ import numpy as np
 import pickle
 
 # Load Model
-model = pickle.load(open('funding_model.pkl', 'rb'))
+model = pickle.load(open('model.pkl', 'rb'))
 
 # Load Encoders with Mapping
 encoders = {}
