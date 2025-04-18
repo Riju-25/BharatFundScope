@@ -3,7 +3,7 @@ import pickle
 import numpy as np
 import pandas as pd
 
-st.title("🚀 Tier-based Startup Funding Predictor")
+st.title("Indian Startup Funding Predictor")
 
 # Input dropdowns (match 'top 5' used during training)
 city_options = ['Bangalore', 'Mumbai', 'New Delhi', 'Gurgaon', 'Noida', 'Other']
