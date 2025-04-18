@@ -42,4 +42,4 @@ with open(f'{tier}_pt.pkl', 'rb') as f:
 if st.button("Predict Funding Amount 💰"):
     y_pred_trans = model.predict(X_input)[0]
     y_pred = pt.inverse_transform([[y_pred_trans]])[0][0]
-    st.success(f"🎯 Predicted Funding: ₹{y_pred:,.2f}")
+    st.success(f"🎯 Predicted Funding: ${y_pred:,.2f}")
